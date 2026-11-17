@@ -1,0 +1,162 @@
+EXPERIMRNT NO 11: CONFIGURE FIREWALL WITH IDS
+
+
+Step 1: Install Required Tools
+sudo apt update && sudo apt upgrade -y
+
+Step2
+# Install Snort
+sudo apt install snort
+
+# Install Wireshark for packet capture
+sudo apt install wireshark
+
+Step 3. Configure Basic iptables Firewall Rules DigitalOcean+1
+Step 3.1 – Set default policies 
+sudo iptables -P INPUT DROP
+sudo iptables -P FORWARD DROP
+sudo iptables -P OUTPUT ACCEPT
+
+Step 3.2 – Allow established/related connections:
+sudo iptables -A INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+sudo iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+
+Step 3.3 – Allow SSH (port 22) and HTTP (port 80):
+sudo iptables -A INPUT -p tcp --dport 22 -j ACCEPT
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
+Step 3.4 – Save rules for reboot persistence:
+sudo apt install iptables-persistent
+sudo iptables-save
+
+
+Step 4. Configure Snort IDS DEV Community
+
+for Snort 2
+Step 4.1 – Create Snort configuration file:
+sudo nano /etc/snort/rules/local.rules
+
+alert tcp any any -> any 80 (msg:"HTTP Request Detected"; sid:1000001; rev:1;)
+alert tcp any any -> any any (flags:S; msg:"TCP SYN Packet Detected"; sid:1000002; rev:1;)
+
+
+TEST SNORT CONFIGURATION
+sudo snort -T -c /etc/snort/snort.conf
+
+O/P : Snort successfully validated the configuration!
+
+
+RESTART SNORT
+sudo systemctl restart snort
+
+CHECK STATUS
+sudo systemctl status snort
+
+
+=====================================================================================================
+
+Firewall Rules and Intrusion Detection Using Snort
+
+=====================================================================================================
+
+STEP 1: CHECK NETWORK INTERFACE
+
+Open Terminal 1 and execute:
+
+ip -br addr
+
+Use 'lo' (localhost) for testing.
+
+STEP 2: START SNORT IDS
+
+In Terminal 1, execute:
+
+sudo snort -A console -q -c /etc/snort/snort.conf -i lo
+
+Keep this terminal running.
+
+STEP 3: START HTTP SERVER
+
+Open Terminal 2 and execute:
+
+sudo python3 -m http.server 8080 --bind 127.0.0.1
+
+Keep the server running.
+
+STEP 4: START PACKET CAPTURE
+
+Open Terminal 3 and execute:
+
+sudo tcpdump -i lo -nn -w capture.pcap
+
+Keep packet capture running.
+
+STEP 5: GENERATE HTTP TRAFFIC
+
+Open Terminal 4 and execute:
+
+curl http://127.0.0.1:8080/
+
+Repeat the command 2-3 times.
+
+STEP 6: STOP PACKET CAPTURE
+
+Go to Terminal 3 and press:
+
+Ctrl + C
+
+The captured packets are saved in capture.pcap.
+
+STEP 7: OPEN WIRESHARK
+
+In Terminal 3, execute:
+
+wireshark capture.pcap
+
+Apply the following display filter:
+
+tcp.port == 8080
+
+Observe the captured network traffic.
+
+STEP 8: VERIFY SNORT ALERTS
+
+Check Terminal 1 for Snort alerts.
+
+Alternatively, execute:
+
+sudo ls -l /var/log/snort/
+
+STEP 9: STOP RUNNING SERVICES
+
+Stop the HTTP server in Terminal 2:
+
+Ctrl + C
+
+Stop Snort in Terminal 1:
+
+Ctrl + C
+
+STEP 10: FINAL VERIFICATION
+
+Check the captured file:
+
+ls -lh capture.pcap
+
+Check firewall rules:
+
+sudo iptables -L -n -v
+
+EXPECTED OUTPUT:
+
+Snort IDS starts successfully.
+HTTP server starts successfully.
+HTTP requests are generated using curl.
+Network packets are captured using tcpdump.
+Captured packets are analysed using Wireshark.
+Snort displays matching intrusion detection alerts.
+
+RESULT:
+
+Successfully configured firewall rules using iptables and demonstrated network traffic monitoring and intrusion detection using Snort, tcpdump, and Wireshark on a single Ubuntu machine.
+
