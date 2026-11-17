@@ -1,0 +1,113 @@
+Experiment 9: Perform File Transfer and Access using FTP 
+---------------------------------------------------------------------
+
+Step 1: Install the FTP server (Server)
+Install vsftpd and make it start automatically.
+
+sudo apt update
+sudo apt install vsftpd
+sudo systemctl start vsftpd
+sudo systemctl enable vsftpd
+sudo systemctl status vsftpd
+
+Step 2: Back up and edit the config for anonymous access (Server)
+Take a backup first, then open the config file.
+
+sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.backup
+sudo nano /etc/vsftpd.conf
+
+Set these lines (remove the # if commented):
+
+anonymous_enable=YES
+local_enable=NO
+write_enable=NO
+
+Save (Ctrl+O, Enter, Ctrl+X), then restart:
+
+sudo systemctl restart vsftpd
+
+Step 3: Find the server IP (Server)
+Note the IP next to inet (e.g., 10.0.2.15).
+
+ip addr
+
+Step 4: Check connectivity (Client)
+Press Ctrl+C to stop the ping.
+
+ping SERVER_IP
+
+Step 5: Test anonymous login (Client)
+Username: anonymous. Password: just press Enter.
+
+ftp SERVER_IP
+ls
+pwd
+
+Type bye to exit.
+
+Step 6: Download a file (first on Server, then Client)
+Server: create a test file in the FTP folder.
+
+sudo touch /srv/ftp/test.txt
+ls -l /srv/ftp/
+
+Client: connect and download.
+
+ftp SERVER_IP
+ls
+get test.txt
+bye
+ls
+
+test.txt should now be in your client folder.
+
+Step 7: Test anonymous upload (should fail) (Client)
+Create a file and try uploading. It must fail because write is disabled.
+
+echo "Testing FTP Upload" > upload.txt
+ftp SERVER_IP
+put upload.txt
+bye
+
+(Careful: type upload.txt correctly. A typo gives “No such file”, which is a different error.)
+
+Step 8: Create a user and enable login (Server)
+Create user abc (set a password when asked; press Enter for the other fields).
+
+sudo adduser abc
+sudo nano /etc/vsftpd.conf
+
+Change the lines to:
+
+anonymous_enable=NO
+local_enable=YES
+write_enable=YES
+local_umask=022
+
+Restart:
+
+sudo systemctl restart vsftpd
+
+Step 9: Login as user abc (Client)
+Enter username abc and its password.
+
+ftp SERVER_IP
+pwd
+ls
+
+You should see /home/abc.
+
+Step 10: Create a directory and upload a file (Client)
+Exit FTP first if still connected, then:
+
+echo "FTP User Authentication Test" > testfiles
+ftp SERVER_IP
+
+Login as abc, then:
+
+mkdir testdir
+put testfiles
+ls
+bye
+
+You should see testdir and testfiles listed.
