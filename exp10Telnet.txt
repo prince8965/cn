@@ -1,0 +1,65 @@
+Experiment no 10 : Telnet
+
+Step 1: Install the Telnet server and client
+Installs the Telnet daemon, the inetd superserver that starts it on demand, and the Telnet client.
+
+sudo apt update
+sudo apt install telnetd inetutils-inetd tcpd telnet -y
+
+
+Step 2: Add the Telnet entry to inetd.conf
+This tells inetd to start telnetd when someone connects to port 23. Open the file:
+
+sudo nano /etc/inetd.conf
+
+
+Add this line at the end, save (Ctrl+O, Enter, Ctrl+X):
+
+telnet stream tcp nowait root /usr/sbin/tcpd /usr/sbin/telnetd
+
+
+
+Step 3: Restart inetd and check it’s running
+Look for active (running). Press q to exit the status screen.
+
+sudo systemctl restart inetd
+sudo systemctl status inetd
+
+Step 4: Check port 23 is listening
+You should see a line with 0.0.0.0:23 and inetutils-inetd.
+
+sudo ss -ltnp | grep ':23'
+
+Step 5: Telnet to your own machine
+Enter your Ubuntu username and password when asked. You get a shell. The first “Connection refused” for ::1 is normal, it then connects to 127.0.0.1.
+
+telnet localhost
+
+Type exit to leave.
+
+Step 6: Test connectivity to a port
+First find your IP (the number after inet on enp0s3):
+
+ip a
+
+Test the Telnet port on your IP:
+
+telnet 10.0.2.15
+
+Replace with your actual IP. Type exit to leave.
+
+Test port 80:
+
+telnet 10.0.2.15 80
+
+It says “Connection refused” because no web server runs on port 80. That’s the expected result and shows the port is closed.
+
+To also see a port open, start a web server in another terminal and run the same command again:
+
+sudo python3 -m http.server 80
+
+Then telnet 10.0.2.15 80 shows “Connected”. Press Ctrl+] then type quit to leave.
+
+Your PDF also lists telnet example.com 80. You can run it too. It shows “Connected” if you have internet access:
+
+telnet example.com 80
